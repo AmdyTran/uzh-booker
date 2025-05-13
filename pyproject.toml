@@ -1,0 +1,46 @@
+[project]
+name = "scheduler"
+version = "0.1.0"
+description = ""
+requires-python = "==3.12.5"
+dependencies = [
+    "beautifulsoup4>=4.13.4",
+    "pydantic-settings>=2.9.1",
+    "pyotp>=2.9.0",
+    "requests>=2.32.3",
+]
+
+# [tool.uv.workspace]
+# members = ["scheduler/*"]
+
+[project.scripts]
+book = "scheduler.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "ruff>=0.6.9",
+    "mypy>=1.11.2",
+    "types-requests>=2.32.0.20250328",
+    "ipykernel>=6.29.5",
+]
+
+[tool.mypy]
+exclude = ['.git', '.venv', '.history', '.*test_.*\.py']
+
+strict = true
+
+show_error_codes = true
+warn_unreachable = true
+
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_any_generics = true
+
+no_implicit_reexport = true
+
+cache_fine_grained = true
+pretty = true
