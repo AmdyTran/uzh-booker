@@ -4,12 +4,14 @@ import datetime as dt
 import json
 import logging
 from datetime import date, datetime, timedelta
+from time import time
 from typing import Any
 import pyotp
 import httpx
 import asyncio
 from bs4 import BeautifulSoup
 from scheduler.config import LoginDetails, BookingDetails
+from scheduler.cache import persistent_cache
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -370,8 +372,26 @@ async def create_reservation(
     return False
 
 
-async def main_async() -> None:
-    async with httpx.AsyncClient() as client:
+async def load_client_and_csrf_token(
+    *,
+    refresh: bool = False,
+) -> tuple[httpx.AsyncClient, str]:
+    if not refresh and (
+        "client_headers" in persistent_cache
+        and "csrf_token" in persistent_cache
+        and "client_cookies_jar" in persistent_cache
+    ):
+        client_headers = persistent_cache.get("client_headers")
+        csrf_token = persistent_cache.get("csrf_token")
+        client_cookies_jar = persistent_cache.get("client_cookies_jar")
+        client = httpx.AsyncClient(headers=client_headers)
+        client.cookies.jar._cookies.update(client_cookies_jar)
+        client.cookies.jar.clear_expired_cookies()
+
+        logger.info("Using cached client and CSRF token")
+        return client, csrf_token
+    else:
+        client = httpx.AsyncClient()
         client.headers.update(
             {
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3.1 Safari/605.1.15",
@@ -429,8 +449,59 @@ async def main_async() -> None:
                 logger.exception(current_page_content[:1500])
             return
 
-        target_day = date.today() + timedelta(days=7)
-        tasks = []
+        client_cookies_jar = client.cookies.jar._cookies
+        client_headers = client.headers
+        persistent_cache.set("client_headers", client_headers, expire=6 * 60 * 60)
+        persistent_cache.set(  # type: ignore
+            "client_cookies_jar", client_cookies_jar, expire=6 * 60 * 60
+        )
+        persistent_cache.set("csrf_token", csrf_token, expire=6 * 60 * 60)
+
+        return client, csrf_token
+
+
+async def main_async() -> None:
+    client, csrf_token = await load_client_and_csrf_token()
+
+    target_day = date.today() + timedelta(days=7)
+    tasks = []
+    for resource_id_int in PREFERRED_RANGE:
+        resource_id_str = str(resource_id_int)
+        tasks.append(
+            create_reservation(
+                client=client,
+                owner_id=OWNER_ID,
+                resource_id=resource_id_str,
+                csrf_token=csrf_token,
+                reservation_date=target_day,
+            )
+        )
+
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    count_fail = 0
+    success_reservations = []
+    for i, resource_id_attempted in enumerate(PREFERRED_RANGE):
+        result = results[i]
+        if isinstance(result, Exception):
+            count_fail += 1
+        elif result is True:
+            logger.info(
+                f"Reservation successful for resource {resource_id_attempted} on {target_day}!"
+            )
+            success_reservations.append(resource_id_attempted)
+        else:
+            count_fail += 1
+
+    logger.info(f"Failed to book {count_fail} resources.")
+    logger.info(
+        f"Successfully booked {len(success_reservations)} resources: {success_reservations}"
+    )
+
+    # TODO(Andy): this is dirty and not clean but oh well
+    if not success_reservations:
+        logger.info("No reservations were successful, trying again in 20 seconds...")
+        time.sleep(15)
         for resource_id_int in PREFERRED_RANGE:
             resource_id_str = str(resource_id_int)
             tasks.append(
@@ -469,10 +540,9 @@ def main() -> None:
     asyncio.run(main_async())
 
 
+def reload_csrf_token() -> None:
+    client, csrf_token = asyncio.run(load_client_and_csrf_token(refresh=True))
+
+
 if __name__ == "__main__":
-    try:
-        booking_details = BookingDetails()
-        settings = LoginDetails()
-        asyncio.run(main())
-    except Exception as e:
-        logger.error(f"Failed to initialize settings or run main: {e}")
+    main()

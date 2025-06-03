@@ -1,6 +1,10 @@
+from diskcache import Cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field, BaseModel
 from pathlib import Path
+
+cache_path = Path(__file__).parent / ".cache"
+persistent_cache = Cache(cache_path)
 
 
 class LoginDetails(BaseSettings):
