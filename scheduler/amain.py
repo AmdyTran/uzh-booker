@@ -10,8 +10,8 @@ import pyotp
 import httpx
 import asyncio
 from bs4 import BeautifulSoup
-from scheduler.config import LoginDetails, BookingDetails
-from scheduler.cache import persistent_cache
+from scheduler.config import LoginDetails, BookingDetails, persistent_cache
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
