@@ -16,6 +16,14 @@ from scheduler.config import LoginDetails, BookingDetails, persistent_cache
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+# Custom Exception for session/auth failures
+class SessionExpiredError(Exception):
+    """Custom exception to indicate a session has expired or CSRF is invalid."""
+
+    pass
+
+
 booking_details = BookingDetails()
 # --- Configuration ---
 BASE_URL = booking_details.base_url
@@ -358,6 +366,11 @@ async def create_reservation(
             logger.exception(f"Error parsing create reservation response as JSON: {e}")
             return False
     except httpx.HTTPStatusError as e:  # More specific exception
+        if e.response.status_code == 401:
+            logger.error(
+                f"401 Unauthorized during reservation creation. Session or CSRF token likely expired. URL: {e.request.url}"
+            )
+            raise SessionExpiredError("Session or CSRF token expired") from e
         logger.exception(
             f"HTTP error during reservation creation: {e.response.status_code} - {e.response.text[:500]}"
         )
@@ -375,24 +388,54 @@ async def create_reservation(
 async def load_client_and_csrf_token(
     *,
     refresh: bool = False,
-) -> tuple[httpx.AsyncClient, str]:
-    if not refresh and (
-        "client_headers" in persistent_cache
-        and "csrf_token" in persistent_cache
-        and "client_cookies_jar" in persistent_cache
-    ):
-        client_headers = persistent_cache.get("client_headers")
-        csrf_token = persistent_cache.get("csrf_token")
-        client_cookies_jar = persistent_cache.get("client_cookies_jar")
-        client = httpx.AsyncClient(headers=client_headers)
-        client.cookies.jar._cookies.update(client_cookies_jar)
-        client.cookies.jar.clear_expired_cookies()
+) -> tuple[httpx.AsyncClient | None, str | None]:
+    cache_key_headers = "client_headers"
+    cache_key_csrf = "csrf_token"
+    cache_key_cookies = "client_cookies_jar"
 
-        logger.info("Using cached client and CSRF token")
-        return client, csrf_token
+    if not refresh:
+        logger.debug("Attempting to load client data from cache.")
+        cached_headers = persistent_cache.get(cache_key_headers)
+        cached_csrf = persistent_cache.get(cache_key_csrf)
+        cached_cookies_dict = persistent_cache.get(cache_key_cookies)
+
+        if cached_headers and cached_csrf and cached_cookies_dict:
+            # Basic validation of cached types
+            if not (
+                isinstance(cached_headers, dict)
+                and isinstance(cached_csrf, str)
+                and isinstance(cached_cookies_dict, dict)
+            ):
+                logger.warning("Cached data type mismatch. Refreshing session.")
+            else:
+                are_cookie_values_strings = True
+                for name, value in cached_cookies_dict.items():
+                    if not isinstance(value, str):
+                        logger.warning(
+                            f"Invalid value type for cookie '{name}' in cache. Refreshing session."
+                        )
+                        are_cookie_values_strings = False
+                        break
+                if are_cookie_values_strings:
+                    try:
+                        client = httpx.AsyncClient(headers=cached_headers)
+                        client.cookies.update(cached_cookies_dict)
+                        # TODO: Consider a lightweight validation request here to confirm session/CSRF validity
+                        logger.info("Using cached client and CSRF token.")
+                        return client, cached_csrf
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to recreate client from cached data: {e}. Refreshing session."
+                        )
+        else:
+            logger.info("One or more items not found in cache. Refreshing session.")
     else:
-        client = httpx.AsyncClient()
-        client.headers.update(
+        logger.info("Explicitly refreshing session and CSRF token (refresh=True).")
+
+    # If cache miss, refresh=True, or cache data was invalid/failed to recreate client:
+    fresh_client = httpx.AsyncClient()
+    try:
+        fresh_client.headers.update(
             {
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3.1 Safari/605.1.15",
                 "Accept-Language": "en-US,en;q=0.9",
@@ -402,12 +445,12 @@ async def load_client_and_csrf_token(
             }
         )
 
-        await login(client)  # Call await login
+        await login(fresh_client)  # Call await login
 
-        # Check if login was successful, e.g., by checking for a specific cookie
-        if "login_token" not in client.cookies:
-            logger.error("Login failed, cannot proceed. Check logs for details.")
-            return
+        if "login_token" not in fresh_client.cookies:
+            logger.error("Login failed (login_token not found). Cannot proceed.")
+            await fresh_client.aclose()  # Close the client if login fails
+            return None, None
 
         current_page_content = ""  # Initialize to prevent NameError in except block
         try:
@@ -423,7 +466,7 @@ async def load_client_and_csrf_token(
             logger.info(
                 f"Fetching schedule page for booking CSRF token from: {schedule_page_for_csrf}"
             )
-            r_schedule = await client.get(
+            r_schedule = await fresh_client.get(
                 schedule_page_for_csrf,
                 headers=schedule_headers,
                 timeout=10,
@@ -432,81 +475,83 @@ async def load_client_and_csrf_token(
             r_schedule.raise_for_status()
             current_page_content = r_schedule.text
             csrf_token = get_csrf_token(current_page_content)
-            logger.info(f"CSRF Token for booking/actions: {csrf_token}")
+            logger.info(f"Fetched new CSRF Token for booking/actions: {csrf_token}")
 
         except httpx.HTTPStatusError as e:
             logger.exception(
                 f"HTTP error fetching schedule page: {e.response.status_code} - {e.response.text[:500]}"
             )
-            return
+            await fresh_client.aclose()
+            return None, None
         except httpx.RequestError as e:
             logger.exception(f"Request error fetching schedule page: {e}")
-            return
+            await fresh_client.aclose()
+            return None, None
         except ValueError as e:  # For get_csrf_token
             logger.exception(f"Error parsing CSRF from schedule page: {e}")
             if current_page_content:  # Only log if content was fetched
                 logger.exception("HTML content for debugging Schedule CSRF:")
                 logger.exception(current_page_content[:1500])
-            return
+            await fresh_client.aclose()
+            return None, None
+        except Exception as e:  # Catch any other unexpected error during setup
+            logger.exception(f"Unexpected error during client setup: {e}")
+            await fresh_client.aclose()
+            return None, None
 
-        client_cookies_jar = client.cookies.jar._cookies
-        client_headers = client.headers
-        persistent_cache.set("client_headers", client_headers, expire=6 * 60 * 60)
-        persistent_cache.set(  # type: ignore
-            "client_cookies_jar", client_cookies_jar, expire=6 * 60 * 60
-        )
-        persistent_cache.set("csrf_token", csrf_token, expire=6 * 60 * 60)
+        # Successfully logged in and got CSRF, store to cache
+        cookies_to_cache = {
+            name: value
+            for name, value in fresh_client.cookies.items()
+            if isinstance(value, str)
+        }
+        headers_to_cache = dict(fresh_client.headers)
 
-        return client, csrf_token
+        persistent_cache.set(cache_key_headers, headers_to_cache, expire=6 * 60 * 60)
+        persistent_cache.set(cache_key_cookies, cookies_to_cache, expire=6 * 60 * 60)
+        persistent_cache.set(cache_key_csrf, csrf_token, expire=6 * 60 * 60)
+        logger.info("Successfully fetched and cached new client data and CSRF token.")
+
+        return fresh_client, csrf_token
+    except (
+        Exception
+    ) as e:  # Catch-all for errors during fresh_client instantiation or initial setup
+        logger.exception(f"Critical error during fresh client setup: {e}")
+        if "fresh_client" in locals() and not fresh_client.is_closed:
+            await fresh_client.aclose()
+        return None, None
 
 
 async def main_async() -> None:
-    client, csrf_token = await load_client_and_csrf_token()
+    max_retries = 1  # Allow one re-authentication attempt
+    retry_count = 0
+    client = None  # Initialize client to None
 
-    target_day = date.today() + timedelta(days=7)
-    tasks = []
-    for resource_id_int in PREFERRED_RANGE:
-        resource_id_str = str(resource_id_int)
-        tasks.append(
-            create_reservation(
-                client=client,
-                owner_id=OWNER_ID,
-                resource_id=resource_id_str,
-                csrf_token=csrf_token,
-                reservation_date=target_day,
-            )
+    while retry_count <= max_retries:
+        needs_refresh = retry_count > 0  # Refresh if it's a retry attempt
+        if (
+            client and not client.is_closed
+        ):  # Close previous client if it exists and is open
+            await client.aclose()
+            logger.info("Closed previous client before retry.")
+
+        temp_client, csrf_token = await load_client_and_csrf_token(
+            refresh=needs_refresh
         )
 
-    results = await asyncio.gather(*tasks, return_exceptions=True)
+        if not temp_client or not csrf_token:
+            logger.error("Failed to load client or CSRF token. Aborting.")
+            return
 
-    count_fail = 0
-    success_reservations = []
-    for i, resource_id_attempted in enumerate(PREFERRED_RANGE):
-        result = results[i]
-        if isinstance(result, Exception):
-            count_fail += 1
-        elif result is True:
-            logger.info(
-                f"Reservation successful for resource {resource_id_attempted} on {target_day}!"
-            )
-            success_reservations.append(resource_id_attempted)
-        else:
-            count_fail += 1
+        client = temp_client  # Assign to the loop-scoped client
 
-    logger.info(f"Failed to book {count_fail} resources.")
-    logger.info(
-        f"Successfully booked {len(success_reservations)} resources: {success_reservations}"
-    )
-
-    # TODO(Andy): this is dirty and not clean but oh well
-    if not success_reservations:
-        logger.info("No reservations were successful, trying again in 20 seconds...")
-        time.sleep(15)
+        target_day = date.today() + timedelta(days=7)
+        tasks = []
         for resource_id_int in PREFERRED_RANGE:
             resource_id_str = str(resource_id_int)
             tasks.append(
                 create_reservation(
-                    client=client,
+                    client=client,  # Use the current client from load_client_and_csrf_token
                     owner_id=OWNER_ID,
                     resource_id=resource_id_str,
                     csrf_token=csrf_token,
@@ -514,26 +559,89 @@ async def main_async() -> None:
                 )
             )
 
+        if not tasks:
+            logger.warning("No reservation tasks generated. Check PREFERRED_RANGE.")
+            if client and not client.is_closed:
+                await client.aclose()
+            return
+
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
+        session_expired_during_batch = False
         count_fail = 0
         success_reservations = []
-        for i, resource_id_attempted in enumerate(PREFERRED_RANGE):
-            result = results[i]
-            if isinstance(result, Exception):
+
+        processed_resource_ids = list(
+            PREFERRED_RANGE
+        )  # For matching results to resource IDs
+
+        for i, result in enumerate(results):
+            resource_id_attempted = processed_resource_ids[i]
+            if isinstance(result, SessionExpiredError):
+                logger.error(
+                    f"SessionExpiredError for resource {resource_id_attempted}. Re-authentication may be needed."
+                )
+                session_expired_during_batch = True
+                count_fail += 1
+            elif isinstance(result, Exception):
+                logger.warning(
+                    f"Reservation for resource {resource_id_attempted} failed with an exception: {result}"
+                )
                 count_fail += 1
             elif result is True:
                 logger.info(
                     f"Reservation successful for resource {resource_id_attempted} on {target_day}!"
                 )
                 success_reservations.append(resource_id_attempted)
-            else:
+            else:  # result is False
+                logger.info(
+                    f"Reservation attempt for resource {resource_id_attempted} returned False."
+                )
                 count_fail += 1
 
-        logger.info(f"Failed to book {count_fail} resources.")
+        logger.info(f"Booking attempt {retry_count + 1} summary:")
+        logger.info(f"Failed to book {count_fail} resources in this batch.")
         logger.info(
-            f"Successfully booked {len(success_reservations)} resources: {success_reservations}"
+            f"Successfully booked {len(success_reservations)} resources in this batch: {success_reservations}"
         )
+
+        if session_expired_during_batch:
+            if retry_count < max_retries:
+                retry_count += 1
+                logger.info(
+                    f"Session expired. Attempting re-authentication (attempt {retry_count}/{max_retries})."
+                )
+                # The loop will continue, and load_client_and_csrf_token will be called with refresh=True
+            else:
+                logger.error(
+                    "Session expired and max retries reached. Could not complete bookings."
+                )
+                break  # Exit retry loop
+        else:
+            # If no session expiry, break out of the retry loop, regardless of other failures/successes
+            # The existing retry logic with time.sleep for general failures can be added here if needed
+            logger.info("Batch processed without session expiration.")
+            if (
+                not success_reservations and booking_details.retry_on_fail
+            ):  # Your existing retry logic
+                logger.info(
+                    f"No reservations successful, and retry_on_fail is True. Waiting {booking_details.retry_delay_seconds}s before general retry."
+                )
+                # This general retry should ideally also re-evaluate if a CSRF/session refresh is needed
+                # For now, it uses the same client and token. If 401s occur here, they won't trigger the specific re-auth.
+                time.sleep(booking_details.retry_delay_seconds)
+                # This part re-runs tasks without re-auth. Consider if this is what you want
+                # or if it should also go through the re-auth loop if it encounters 401s.
+                logger.info("Re-attempting failed reservations (general retry)...")
+                # Re-create tasks only for those that didn't succeed and weren't SessionExpiredError
+                # This requires more sophisticated tracking of failures if you want to be selective.
+                # For simplicity, the original code re-appended all tasks. Be mindful of this.
+            else:
+                break  # No session expiry, and either success or no general retry configured
+
+    if client and not client.is_closed:  # Ensure client is closed at the very end
+        await client.aclose()
+        logger.info("Final client closed.")
 
 
 def main() -> None:
