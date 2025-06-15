@@ -15,6 +15,7 @@ dependencies = [
     "pytest-vcr>=1.0.2",
     "requests>=2.32.3",
     "respx>=0.22.0",
+    "rich>=14.0.0",
     "vcrpy>=5.1.0",
 ]
 
@@ -28,6 +29,7 @@ refresh-async = "scheduler.amain:reload_csrf_token"
 
 # Demo and utilities
 record-cassettes = "record_cassettes:main"
+select-spots = "create_config:main"
 
 [build-system]
 requires = ["hatchling"]
