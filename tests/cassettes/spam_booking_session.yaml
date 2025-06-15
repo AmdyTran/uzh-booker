@@ -1,0 +1,258 @@
+interactions:
+- request:
+    body: "--b5647994c249056d80b46d16138ec8ed\r\nContent-Disposition: form-data; name=\"request\"\r\nContent-Type:
+      application/json\r\n\r\n{\"reservation\": {\"referenceNumber\": null, \"ownerId\":
+      1843, \"resourceIds\": [\"231\"], \"accessories\": [], \"title\": \"\", \"description\":
+      \"\", \"start\": \"2025-06-22T18:00:00.000Z\", \"end\": \"2025-06-22T18:30:00.000Z\",
+      \"recurrence\": {\"type\": \"none\", \"interval\": 1, \"weekdays\": null, \"monthlyType\":
+      null, \"weekOfMonth\": null, \"terminationDate\": null, \"repeatDates\": []},
+      \"startReminder\": null, \"endReminder\": null, \"inviteeIds\": [], \"coOwnerIds\":
+      [], \"participantIds\": [], \"guestEmails\": [], \"participantEmails\": [],
+      \"allowSelfJoin\": false, \"attachments\": [], \"requiresApproval\": false,
+      \"checkinDate\": null, \"checkoutDate\": null, \"termsAcceptedDate\": \"2025-06-15T19:23:15.504Z\",
+      \"attributeValues\": [{\"id\": \"1\", \"value\": \"WWF\"}], \"meetingLink\":
+      null, \"displayColor\": null}, \"retryParameters\": [], \"updateScope\": \"full\"}\r\n--b5647994c249056d80b46d16138ec8ed\r\nContent-Disposition:
+      form-data; name=\"CSRF_TOKEN\"\r\n\r\nSOME_CSRF_TOKEN=\r\n--b5647994c249056d80b46d16138ec8ed\r\nContent-Disposition:
+      form-data; name=\"BROWSER_TIMEZONE\"\r\n\r\nEurope/Zurich\r\n--b5647994c249056d80b46d16138ec8ed--\r\n"
+    headers:
+      accept:
+      - text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+      accept-encoding:
+      - gzip, deflate, br
+      accept-language:
+      - en-US,en;q=0.9
+      connection:
+      - keep-alive
+      content-length:
+      - '1207'
+      content-type:
+      - multipart/form-data; boundary=b5647994c249056d80b46d16138ec8ed
+      host:
+      - ubbooked01.ub.uzh.ch
+      x-csrf-token:
+      - SOME_CSRF_TOKEN=
+    method: POST
+    uri: https://ubbooked01.ub.uzh.ch/ub/Web/api/reservation.php?action=create
+  response:
+    body:
+      string: '{"success":true,"data":{"referenceNumber":null,"success":false,"canBeRetried":false,"canJoinWaitlist":false,"errors":["Es
+        ist nur eine Reservierung zur selben Zeit m\u00f6glich.\n22\/06\/2025\n"],"warnings":[],"retryMessages":[null],"retryParameters":[],"requiresApproval":false,"showDetails":false,"dates":[],"payment":null},"error":null}
+
+        '
+    headers:
+      Cache-Control:
+      - no-store, no-cache, must-revalidate
+      Connection:
+      - Keep-Alive
+      Content-Length:
+      - '340'
+      Content-Type:
+      - application/json
+      Date:
+      - Sun, 15 Jun 2025 17:23:15 GMT
+      Expires:
+      - Thu, 19 Nov 1981 08:52:00 GMT
+      Keep-Alive:
+      - timeout=5, max=100
+      Pragma:
+      - no-cache
+      Server:
+      - Apache/2.4.55 (Win64) OpenSSL/1.1.1t PHP/8.1.31
+      X-Powered-By:
+      - PHP/8.1.31
+    status:
+      code: 200
+      message: OK
+- request:
+    body: "--8e137bbc50bd5494ffcf0408d5573005\r\nContent-Disposition: form-data; name=\"request\"\r\nContent-Type:
+      application/json\r\n\r\n{\"reservation\": {\"referenceNumber\": null, \"ownerId\":
+      1843, \"resourceIds\": [\"234\"], \"accessories\": [], \"title\": \"\", \"description\":
+      \"\", \"start\": \"2025-06-22T18:00:00.000Z\", \"end\": \"2025-06-22T18:30:00.000Z\",
+      \"recurrence\": {\"type\": \"none\", \"interval\": 1, \"weekdays\": null, \"monthlyType\":
+      null, \"weekOfMonth\": null, \"terminationDate\": null, \"repeatDates\": []},
+      \"startReminder\": null, \"endReminder\": null, \"inviteeIds\": [], \"coOwnerIds\":
+      [], \"participantIds\": [], \"guestEmails\": [], \"participantEmails\": [],
+      \"allowSelfJoin\": false, \"attachments\": [], \"requiresApproval\": false,
+      \"checkinDate\": null, \"checkoutDate\": null, \"termsAcceptedDate\": \"2025-06-15T19:23:15.506Z\",
+      \"attributeValues\": [{\"id\": \"1\", \"value\": \"WWF\"}], \"meetingLink\":
+      null, \"displayColor\": null}, \"retryParameters\": [], \"updateScope\": \"full\"}\r\n--8e137bbc50bd5494ffcf0408d5573005\r\nContent-Disposition:
+      form-data; name=\"CSRF_TOKEN\"\r\n\r\nSOME_CSRF_TOKEN=\r\n--8e137bbc50bd5494ffcf0408d5573005\r\nContent-Disposition:
+      form-data; name=\"BROWSER_TIMEZONE\"\r\n\r\nEurope/Zurich\r\n--8e137bbc50bd5494ffcf0408d5573005--\r\n"
+    headers:
+      accept:
+      - text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+      accept-encoding:
+      - gzip, deflate, br
+      accept-language:
+      - en-US,en;q=0.9
+      connection:
+      - keep-alive
+      content-length:
+      - '1207'
+      content-type:
+      - multipart/form-data; boundary=8e137bbc50bd5494ffcf0408d5573005
+      host:
+      - ubbooked01.ub.uzh.ch
+      x-csrf-token:
+      - SOME_CSRF_TOKEN=
+    method: POST
+    uri: https://ubbooked01.ub.uzh.ch/ub/Web/api/reservation.php?action=create
+  response:
+    body:
+      string: '{"success":true,"data":{"referenceNumber":null,"success":false,"canBeRetried":false,"canJoinWaitlist":false,"errors":["Es
+        ist nur eine Reservierung zur selben Zeit m\u00f6glich.\n22\/06\/2025\n"],"warnings":[],"retryMessages":[null],"retryParameters":[],"requiresApproval":false,"showDetails":false,"dates":[],"payment":null},"error":null}
+
+        '
+    headers:
+      Cache-Control:
+      - no-store, no-cache, must-revalidate
+      Connection:
+      - Keep-Alive
+      Content-Length:
+      - '340'
+      Content-Type:
+      - application/json
+      Date:
+      - Sun, 15 Jun 2025 17:23:15 GMT
+      Expires:
+      - Thu, 19 Nov 1981 08:52:00 GMT
+      Keep-Alive:
+      - timeout=5, max=100
+      Pragma:
+      - no-cache
+      Server:
+      - Apache/2.4.55 (Win64) OpenSSL/1.1.1t PHP/8.1.31
+      X-Powered-By:
+      - PHP/8.1.31
+    status:
+      code: 200
+      message: OK
+- request:
+    body: "--78c070f9110fae77648dfa68cd246972\r\nContent-Disposition: form-data; name=\"request\"\r\nContent-Type:
+      application/json\r\n\r\n{\"reservation\": {\"referenceNumber\": null, \"ownerId\":
+      1843, \"resourceIds\": [\"233\"], \"accessories\": [], \"title\": \"\", \"description\":
+      \"\", \"start\": \"2025-06-22T18:00:00.000Z\", \"end\": \"2025-06-22T18:30:00.000Z\",
+      \"recurrence\": {\"type\": \"none\", \"interval\": 1, \"weekdays\": null, \"monthlyType\":
+      null, \"weekOfMonth\": null, \"terminationDate\": null, \"repeatDates\": []},
+      \"startReminder\": null, \"endReminder\": null, \"inviteeIds\": [], \"coOwnerIds\":
+      [], \"participantIds\": [], \"guestEmails\": [], \"participantEmails\": [],
+      \"allowSelfJoin\": false, \"attachments\": [], \"requiresApproval\": false,
+      \"checkinDate\": null, \"checkoutDate\": null, \"termsAcceptedDate\": \"2025-06-15T19:23:15.505Z\",
+      \"attributeValues\": [{\"id\": \"1\", \"value\": \"WWF\"}], \"meetingLink\":
+      null, \"displayColor\": null}, \"retryParameters\": [], \"updateScope\": \"full\"}\r\n--78c070f9110fae77648dfa68cd246972\r\nContent-Disposition:
+      form-data; name=\"CSRF_TOKEN\"\r\n\r\nSOME_CSRF_TOKEN=\r\n--78c070f9110fae77648dfa68cd246972\r\nContent-Disposition:
+      form-data; name=\"BROWSER_TIMEZONE\"\r\n\r\nEurope/Zurich\r\n--78c070f9110fae77648dfa68cd246972--\r\n"
+    headers:
+      accept:
+      - text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+      accept-encoding:
+      - gzip, deflate, br
+      accept-language:
+      - en-US,en;q=0.9
+      connection:
+      - keep-alive
+      content-length:
+      - '1207'
+      content-type:
+      - multipart/form-data; boundary=78c070f9110fae77648dfa68cd246972
+      host:
+      - ubbooked01.ub.uzh.ch
+      x-csrf-token:
+      - SOME_CSRF_TOKEN=
+    method: POST
+    uri: https://ubbooked01.ub.uzh.ch/ub/Web/api/reservation.php?action=create
+  response:
+    body:
+      string: '{"success":true,"data":{"referenceNumber":null,"success":false,"canBeRetried":false,"canJoinWaitlist":false,"errors":["Es
+        ist nur eine Reservierung zur selben Zeit m\u00f6glich.\n22\/06\/2025\n"],"warnings":[],"retryMessages":[null],"retryParameters":[],"requiresApproval":false,"showDetails":false,"dates":[],"payment":null},"error":null}
+
+        '
+    headers:
+      Cache-Control:
+      - no-store, no-cache, must-revalidate
+      Connection:
+      - Keep-Alive
+      Content-Length:
+      - '340'
+      Content-Type:
+      - application/json
+      Date:
+      - Sun, 15 Jun 2025 17:23:15 GMT
+      Expires:
+      - Thu, 19 Nov 1981 08:52:00 GMT
+      Keep-Alive:
+      - timeout=5, max=100
+      Pragma:
+      - no-cache
+      Server:
+      - Apache/2.4.55 (Win64) OpenSSL/1.1.1t PHP/8.1.31
+      X-Powered-By:
+      - PHP/8.1.31
+    status:
+      code: 200
+      message: OK
+- request:
+    body: "--ebd5be99c9db4b321b77d7c3b591e46f\r\nContent-Disposition: form-data; name=\"request\"\r\nContent-Type:
+      application/json\r\n\r\n{\"reservation\": {\"referenceNumber\": null, \"ownerId\":
+      1843, \"resourceIds\": [\"232\"], \"accessories\": [], \"title\": \"\", \"description\":
+      \"\", \"start\": \"2025-06-22T18:00:00.000Z\", \"end\": \"2025-06-22T18:30:00.000Z\",
+      \"recurrence\": {\"type\": \"none\", \"interval\": 1, \"weekdays\": null, \"monthlyType\":
+      null, \"weekOfMonth\": null, \"terminationDate\": null, \"repeatDates\": []},
+      \"startReminder\": null, \"endReminder\": null, \"inviteeIds\": [], \"coOwnerIds\":
+      [], \"participantIds\": [], \"guestEmails\": [], \"participantEmails\": [],
+      \"allowSelfJoin\": false, \"attachments\": [], \"requiresApproval\": false,
+      \"checkinDate\": null, \"checkoutDate\": null, \"termsAcceptedDate\": \"2025-06-15T19:23:15.505Z\",
+      \"attributeValues\": [{\"id\": \"1\", \"value\": \"WWF\"}], \"meetingLink\":
+      null, \"displayColor\": null}, \"retryParameters\": [], \"updateScope\": \"full\"}\r\n--ebd5be99c9db4b321b77d7c3b591e46f\r\nContent-Disposition:
+      form-data; name=\"CSRF_TOKEN\"\r\n\r\nSOME_CSRF_TOKEN=\r\n--ebd5be99c9db4b321b77d7c3b591e46f\r\nContent-Disposition:
+      form-data; name=\"BROWSER_TIMEZONE\"\r\n\r\nEurope/Zurich\r\n--ebd5be99c9db4b321b77d7c3b591e46f--\r\n"
+    headers:
+      accept:
+      - text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+      accept-encoding:
+      - gzip, deflate, br
+      accept-language:
+      - en-US,en;q=0.9
+      connection:
+      - keep-alive
+      content-length:
+      - '1207'
+      content-type:
+      - multipart/form-data; boundary=ebd5be99c9db4b321b77d7c3b591e46f
+      host:
+      - ubbooked01.ub.uzh.ch
+      x-csrf-token:
+      - SOME_CSRF_TOKEN=
+    method: POST
+    uri: https://ubbooked01.ub.uzh.ch/ub/Web/api/reservation.php?action=create
+  response:
+    body:
+      string: '{"success":true,"data":{"referenceNumber":null,"success":false,"canBeRetried":false,"canJoinWaitlist":false,"errors":["Es
+        ist nur eine Reservierung zur selben Zeit m\u00f6glich.\n22\/06\/2025\n"],"warnings":[],"retryMessages":[null],"retryParameters":[],"requiresApproval":false,"showDetails":false,"dates":[],"payment":null},"error":null}
+
+        '
+    headers:
+      Cache-Control:
+      - no-store, no-cache, must-revalidate
+      Connection:
+      - Keep-Alive
+      Content-Length:
+      - '340'
+      Content-Type:
+      - application/json
+      Date:
+      - Sun, 15 Jun 2025 17:23:15 GMT
+      Expires:
+      - Thu, 19 Nov 1981 08:52:00 GMT
+      Keep-Alive:
+      - timeout=5, max=100
+      Pragma:
+      - no-cache
+      Server:
+      - Apache/2.4.55 (Win64) OpenSSL/1.1.1t PHP/8.1.31
+      X-Powered-By:
+      - PHP/8.1.31
+    status:
+      code: 200
+      message: OK
+version: 1
