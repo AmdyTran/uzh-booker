@@ -15,6 +15,22 @@ class LoginDetails(BaseSettings):
     uzh_totp_secret: str = Field(alias="UZH_TOTP_SECRET")
 
 
+class BookingConstants:
+    """Centralized constants for booking operations."""
+
+    DEFAULT_TIMEOUT = 15
+    CACHE_EXPIRY_HOURS = 6
+    MAX_CONCURRENT_BOOKINGS = 50
+    TIMEZONE = "Europe/Zurich"
+
+    # HTTP Headers
+    USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3.1 Safari/605.1.15"
+    ACCEPT_LANGUAGE = "en-US,en;q=0.9"
+    ACCEPT_ENCODING = "gzip, deflate, br"
+    CONNECTION = "keep-alive"
+    ACCEPT = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+
+
 class BookingDetails(BaseModel):
     base_url: str = "https://ubbooked01.ub.uzh.ch/ub/Web/"
     login_page_url: str = base_url + "index.php"
@@ -24,7 +40,7 @@ class BookingDetails(BaseModel):
     preferred_range_start: int = 231
     preferred_range_end: int = 263
     preferred_start_time_hour: int = 6
-    preferred_start_time_minute: int = 30
+    preferred_start_time_minute: int = 0
     preferred_end_time_hour: int = 16
     preferred_end_time_minute: int = 30
     standard_attribute_values: list[dict[str, str]] = [{"id": "1", "value": "WWF"}]
