@@ -108,9 +108,28 @@ TFA_VALIDATE_URL = booking_details.tfa_validate_url
 
 # Booking Configuration
 OWNER_ID = booking_details.owner_id
+
+# Use selected resource IDs if available, otherwise fall back to range
+if hasattr(booking_details, "resource_ids_to_book"):
+    RESOURCE_IDS_TO_BOOK = booking_details.resource_ids_to_book
+elif (
+    hasattr(booking_details, "selected_resource_ids")
+    and booking_details.selected_resource_ids
+):
+    RESOURCE_IDS_TO_BOOK = booking_details.selected_resource_ids
+else:
+    # Legacy range-based approach
+    RESOURCE_IDS_TO_BOOK = list(
+        range(
+            booking_details.preferred_range_start, booking_details.preferred_range_end
+        )
+    )
+
+# Keep PREFERRED_RANGE for backward compatibility
 PREFERRED_RANGE = range(
     booking_details.preferred_range_start, booking_details.preferred_range_end
 )
+
 PREFERRED_START_TIME_HOUR = booking_details.preferred_start_time_hour
 PREFERRED_START_TIME_MINUTE = booking_details.preferred_start_time_minute
 PREFERRED_END_TIME_HOUR = booking_details.preferred_end_time_hour
@@ -741,21 +760,30 @@ async def attempt_batch_booking(
     if target_date is None:
         target_date = date.today() + timedelta(days=7)
 
-    resource_count = len(PREFERRED_RANGE)
+    resource_count = len(RESOURCE_IDS_TO_BOOK)
     logger.info(
         f"🚀 SPAM BOOKING: Attempting {resource_count} resources concurrently for {target_date}"
     )
-    logger.info(f"📍 Resource range: {min(PREFERRED_RANGE)}-{max(PREFERRED_RANGE)}")
-    logger.info("⚡ Strategy: Concurrent spam for maximum speed")
 
-    # Create booking requests for ALL resources in range
+    if len(RESOURCE_IDS_TO_BOOK) != len(PREFERRED_RANGE):
+        # Using selected spots, not range
+        logger.info(f"📍 Selected spots: {RESOURCE_IDS_TO_BOOK}")
+        logger.info("🎯 Strategy: Targeting specific selected spots")
+    else:
+        # Using range-based approach
+        logger.info(
+            f"📍 Resource range: {min(RESOURCE_IDS_TO_BOOK)}-{max(RESOURCE_IDS_TO_BOOK)}"
+        )
+        logger.info("⚡ Strategy: Concurrent spam for maximum speed")
+
+    # Create booking requests for selected resources
     requests = [
         BookingRequest(
             resource_id=str(resource_id),
             owner_id=OWNER_ID,
             reservation_date=target_date,
         )
-        for resource_id in PREFERRED_RANGE
+        for resource_id in RESOURCE_IDS_TO_BOOK
     ]
 
     # Create tasks for concurrent execution - this is the "spam"

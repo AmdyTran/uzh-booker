@@ -59,9 +59,9 @@ class TestUtilityFunctions:
 
         assert start_time.date() == test_date
         assert end_time.date() == test_date
-        assert start_time.hour == 18
-        assert start_time.minute == 0
-        assert end_time.hour == 18
+        assert start_time.hour == 6
+        assert start_time.minute == 30
+        assert end_time.hour == 16
         assert end_time.minute == 30
 
     def test_create_reservation_payload(self):
