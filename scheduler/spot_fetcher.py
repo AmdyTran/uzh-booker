@@ -120,14 +120,38 @@ async def fetch_spots_for_schedule(
             # Parse the JavaScript object
             spot_data = _parse_js_object(match)
             if spot_data and "id" in spot_data and "name" in spot_data:
+                # Clean up string values by removing quotes
+                name = spot_data["name"]
+                if (
+                    isinstance(name, str)
+                    and name.startswith('"')
+                    and name.endswith('"')
+                ):
+                    name = name[1:-1]
+
+                href = spot_data.get("href", "")
+                if (
+                    isinstance(href, str)
+                    and href.startswith('"')
+                    and href.endswith('"')
+                ):
+                    href = href[1:-1]
+
+                # Handle canBook - could be boolean or string
+                can_book = spot_data.get("canBook", True)
+                if isinstance(can_book, str):
+                    can_book = can_book.lower() == "true"
+                elif not isinstance(can_book, bool):
+                    can_book = True  # Default to True
+
                 spots.append(
                     BookingSpot(
                         id=int(spot_data["id"]),
-                        name=spot_data["name"].strip('"'),
+                        name=name,
                         schedule_id=schedule_id,
                         schedule_name=schedule_name,
-                        href=spot_data.get("href", "").strip('"'),
-                        can_book=spot_data.get("canBook", "true").lower() == "true",
+                        href=href,
+                        can_book=can_book,
                     )
                 )
 
