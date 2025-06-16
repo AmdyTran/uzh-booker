@@ -39,8 +39,8 @@ class BookingDetails(BaseModel):
     owner_id: int = 1843
 
     # SELECTED SPOTS CONFIGURATION
-    # Generated from spot selector with 1 spots
-    selected_resource_ids: list[int] = [132]
+    # Generated from spot selector with 0 spots
+    selected_resource_ids: list[int] = []
 
     # Legacy range settings (not used when selected_resource_ids is provided)
     preferred_range_start: int = 231
