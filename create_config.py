@@ -80,26 +80,23 @@ class SpotSelector:
 
             console.print("\n[bold cyan]📋 Main Menu[/bold cyan]")
             console.print("1. 📚 Browse by library/schedule")
-            console.print("2. 🔍 Search spots by name")
-            console.print("3. 📝 View selected spots")
-            console.print("4. 💾 Generate configuration")
-            console.print("5. 🚪 Exit")
+            console.print("2. 📝 View selected spots")
+            console.print("3. 💾 Generate configuration")
+            console.print("4. 🚪 Exit")
 
             choice = Prompt.ask(
                 "\n[bold yellow]Choose an option[/bold yellow]",
-                choices=["1", "2", "3", "4", "5"],
+                choices=["1", "2", "3", "4"],
                 default="1",
             )
 
             if choice == "1":
                 await self._browse_by_schedule()
             elif choice == "2":
-                await self._search_spots()
-            elif choice == "3":
                 await self._view_selected_spots()
-            elif choice == "4":
+            elif choice == "3":
                 await self._generate_config()
-            elif choice == "5":
+            elif choice == "4":
                 console.print("[green]👋 Goodbye![/green]")
                 break
 
@@ -155,33 +152,6 @@ class SpotSelector:
         except ValueError:
             console.print("[red]Invalid selection[/red]")
             await asyncio.sleep(1)
-
-    async def _search_spots(self):
-        """Search spots by name."""
-        console.clear()
-        console.print("[bold cyan]🔍 Search Spots by Name[/bold cyan]\n")
-
-        search_term = Prompt.ask("[bold yellow]Enter search term[/bold yellow]")
-        if not search_term:
-            return
-
-        # Search through all spots
-        matching_spots = []
-        search_lower = search_term.lower()
-
-        for spots_list in self.all_spots.values():
-            for spot in spots_list:
-                if search_lower in spot.name.lower():
-                    matching_spots.append(spot)
-
-        if not matching_spots:
-            console.print(f"[red]No spots found matching '{search_term}'[/red]")
-            Prompt.ask("Press Enter to continue")
-            return
-
-        await self._select_spots_from_list(
-            matching_spots, f"🔍 Search Results for '{search_term}'"
-        )
 
     async def _select_spots_from_list(self, spots: list[BookingSpot], title: str):
         """Show spots and allow selection."""
@@ -356,10 +326,31 @@ class SpotSelector:
         ):
             return
 
-        # Generate the configuration
-        await self._write_config_file()
+        # Ask for config name
+        console.print("\n[bold cyan]📝 Configuration Options[/bold cyan]")
+        console.print("1. 📄 Replace default config.py (recommended)")
+        console.print("2. 💾 Save as named config (e.g., monday_config.py)")
 
-    async def _write_config_file(self):
+        config_choice = Prompt.ask(
+            "\n[bold yellow]Choose option[/bold yellow]",
+            choices=["1", "2"],
+            default="1",
+        )
+
+        config_name = None
+        if config_choice == "2":
+            config_name = Prompt.ask(
+                "\n[bold yellow]Enter config name (without .py)[/bold yellow]",
+                default="monday_config",
+            )
+            # Ensure it ends with _config
+            if not config_name.endswith("_config"):
+                config_name += "_config"
+
+        # Generate the configuration
+        await self._write_config_file(config_name)
+
+    async def _write_config_file(self, config_name: str | None = None):
         """Write the new configuration file."""
         try:
             # Load current config to preserve other settings
@@ -437,8 +428,12 @@ class BookingDetails(BaseModel):
             return list(range(self.preferred_range_start, self.preferred_range_end))
 '''
 
-            # Write to config file
-            config_path = Path("scheduler/config.py")
+            # Determine config file path
+            if config_name:
+                config_path = Path(f"scheduler/{config_name}.py")
+            else:
+                config_path = Path("scheduler/config.py")
+
             config_path.write_text(config_content)
 
             console.print(
@@ -453,7 +448,15 @@ class BookingDetails(BaseModel):
                 )
 
             console.print("\n[bold blue]🎯 Next steps:[/bold blue]")
-            console.print("1. Run: [bold cyan]uv run book-async[/bold cyan]")
+            if config_name:
+                console.print(
+                    f"1. Run: [bold cyan]uv run book-async --config {config_name}[/bold cyan]"
+                )
+                console.print(
+                    f"2. Or copy {config_name}.py to config.py to make it default"
+                )
+            else:
+                console.print("1. Run: [bold cyan]uv run book-async[/bold cyan]")
             console.print("2. The system will now attempt to book these specific spots")
             console.print("3. Check the logs for booking results")
 

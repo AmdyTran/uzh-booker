@@ -24,12 +24,14 @@ dependencies = [
 book = "scheduler.main:main"
 
 # Refactored async booking (recommended)
-book-async = "scheduler.amain:main"
+book-async = "scheduler.booking_main:main"
+book-async-legacy = "scheduler.amain:main"
 refresh-async = "scheduler.amain:reload_csrf_token"
 
 # Demo and utilities
 record-cassettes = "record_cassettes:main"
 select-spots = "create_config:main"
+manage-configs = "manage_configs:main"
 
 [build-system]
 requires = ["hatchling"]
